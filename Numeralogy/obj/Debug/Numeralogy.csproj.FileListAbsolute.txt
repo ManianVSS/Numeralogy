@@ -1,0 +1,16 @@
+C:\Users\IBM_ADMIN\Documents\SharpDevelop Projects\Numeralogy\Numeralogy\bin\Debug\Numeralogy.exe.config
+C:\Users\IBM_ADMIN\Documents\SharpDevelop Projects\Numeralogy\Numeralogy\bin\Debug\Numeralogy.exe
+C:\Users\IBM_ADMIN\Documents\SharpDevelop Projects\Numeralogy\Numeralogy\bin\Debug\Numeralogy.pdb
+C:\Users\IBM_ADMIN\Documents\SharpDevelop Projects\Numeralogy\Numeralogy\obj\Debug\Numeralogy.csprojResolveAssemblyReference.cache
+C:\Users\IBM_ADMIN\Documents\SharpDevelop Projects\Numeralogy\Numeralogy\obj\Debug\Numeralogy.MainForm.resources
+C:\Users\IBM_ADMIN\Documents\SharpDevelop Projects\Numeralogy\Numeralogy\obj\Debug\Numeralogy.csproj.GenerateResource.Cache
+C:\Users\IBM_ADMIN\Documents\SharpDevelop Projects\Numeralogy\Numeralogy\obj\Debug\Numeralogy.exe
+C:\Users\IBM_ADMIN\Documents\SharpDevelop Projects\Numeralogy\Numeralogy\obj\Debug\Numeralogy.pdb
+I:\Numeralogy\Numeralogy\bin\Debug\Numeralogy.exe.config
+I:\Numeralogy\Numeralogy\bin\Debug\Numeralogy.exe
+I:\Numeralogy\Numeralogy\bin\Debug\Numeralogy.pdb
+I:\Numeralogy\Numeralogy\obj\Debug\Numeralogy.csprojResolveAssemblyReference.cache
+I:\Numeralogy\Numeralogy\obj\Debug\Numeralogy.MainForm.resources
+I:\Numeralogy\Numeralogy\obj\Debug\Numeralogy.csproj.GenerateResource.Cache
+I:\Numeralogy\Numeralogy\obj\Debug\Numeralogy.exe
+I:\Numeralogy\Numeralogy\obj\Debug\Numeralogy.pdb

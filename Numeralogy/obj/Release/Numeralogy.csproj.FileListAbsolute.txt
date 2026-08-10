@@ -1,0 +1,6 @@
+H:\Numeralogy\Numeralogy\bin\Release\Numeralogy.exe.config
+H:\Numeralogy\Numeralogy\bin\Release\Numeralogy.exe
+H:\Numeralogy\Numeralogy\obj\Release\Numeralogy.csprojResolveAssemblyReference.cache
+H:\Numeralogy\Numeralogy\obj\Release\Numeralogy.MainForm.resources
+H:\Numeralogy\Numeralogy\obj\Release\Numeralogy.csproj.GenerateResource.Cache
+H:\Numeralogy\Numeralogy\obj\Release\Numeralogy.exe
