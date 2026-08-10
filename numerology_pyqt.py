@@ -1,3 +1,4 @@
+import getpass
 import sys
 from pathlib import Path
 
@@ -121,12 +122,15 @@ class NumerologyModel:
         return names
 
 
-class NumerologyWindow(QtWidgets.QWidget):
+class NumerologyWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.model = NumerologyModel()
+        self.dictionary_names = []
+        self.default_initial = getpass.getuser()[:1].upper() if getpass.getuser() else ""
+
         self.setWindowTitle("Numeralogy")
-        self.resize(760, 320)
+        self.resize(960, 520)
 
         self.name_edit = QtWidgets.QLineEdit("Manian")
         self.total_edit = QtWidgets.QLineEdit()
@@ -142,28 +146,157 @@ class NumerologyWindow(QtWidgets.QWidget):
         self.generated_edit = QtWidgets.QLineEdit()
         self.generated_edit.setReadOnly(True)
 
+        self.starts_with_edit = QtWidgets.QLineEdit()
+        self.initial_edit = QtWidgets.QLineEdit()
+        self.initial_edit.setPlaceholderText(f"Auto from OS user: {self.default_initial}")
+        self.name_sum_spin = QtWidgets.QSpinBox()
+        self.name_sum_spin.setRange(0, 200)
+        self.term_sum_spin = QtWidgets.QSpinBox()
+        self.term_sum_spin.setRange(0, 9)
+        self.search_button = QtWidgets.QPushButton("Search Dictionary")
+        self.search_button.clicked.connect(self.search_dictionary)
+        self.clear_button = QtWidgets.QPushButton("Clear Filters")
+        self.clear_button.clicked.connect(self.clear_filters)
+        self.dictionary_path_label = QtWidgets.QLabel("No dictionary loaded")
+
+        self.results_table = QtWidgets.QTableWidget(0, 6)
+        self.results_table.setHorizontalHeaderLabels(["Name", "Initial", "Last Name", "Sum", "Recursive Sum", "Full Name"])
+        self.results_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.results_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.results_table.horizontalHeader().setStretchLastSection(True)
+
         self.export_button = QtWidgets.QPushButton("Export Names")
         self.export_button.clicked.connect(self.export_names)
 
         self.name_edit.textChanged.connect(self.update_totals)
         self.update_totals()
 
-        layout = QtWidgets.QGridLayout(self)
+        central_widget = QtWidgets.QWidget()
+        self.setCentralWidget(central_widget)
+
+        layout = QtWidgets.QGridLayout(central_widget)
         layout.addWidget(QtWidgets.QLabel("Registration Name:\nName Prefix For Export:"), 0, 0)
         layout.addWidget(self.name_edit, 0, 1, 1, 3)
+        layout.addWidget(QtWidgets.QLabel("Dictionary File:"), 1, 0)
+        layout.addWidget(self.dictionary_path_label, 1, 1, 1, 3)
 
-        layout.addWidget(QtWidgets.QLabel("Name Sum:"), 1, 2)
-        layout.addWidget(self.total_edit, 1, 3)
-        layout.addWidget(QtWidgets.QLabel("Name Recursive Sum:"), 2, 2)
-        layout.addWidget(self.term_total_edit, 2, 3)
+        layout.addWidget(QtWidgets.QLabel("Name Sum:"), 2, 2)
+        layout.addWidget(self.total_edit, 2, 3)
+        layout.addWidget(QtWidgets.QLabel("Name Recursive Sum:"), 3, 2)
+        layout.addWidget(self.term_total_edit, 3, 3)
 
-        layout.addWidget(QtWidgets.QLabel("Desired Number:"), 3, 0)
-        layout.addWidget(self.desired_spin, 3, 1)
-        layout.addWidget(self.export_button, 3, 2)
-        layout.addWidget(QtWidgets.QLabel("Max Length:"), 4, 0)
-        layout.addWidget(self.max_length_spin, 4, 1)
-        layout.addWidget(QtWidgets.QLabel("Generated Name:"), 5, 0)
-        layout.addWidget(self.generated_edit, 5, 1, 1, 3)
+        layout.addWidget(QtWidgets.QLabel("Desired Number:"), 4, 0)
+        layout.addWidget(self.desired_spin, 4, 1)
+        layout.addWidget(QtWidgets.QLabel("Max Length:"), 4, 2)
+        layout.addWidget(self.max_length_spin, 4, 3)
+        layout.addWidget(self.export_button, 5, 0, 1, 4)
+
+        layout.addWidget(QtWidgets.QLabel("Filter: Starts with"), 6, 0)
+        layout.addWidget(self.starts_with_edit, 6, 1)
+        layout.addWidget(QtWidgets.QLabel("Filter: Initial (blank = first letter of user)"), 6, 2)
+        layout.addWidget(self.initial_edit, 6, 3)
+
+        layout.addWidget(QtWidgets.QLabel("Filter: Name sum (0 = any)"), 7, 0)
+        layout.addWidget(self.name_sum_spin, 7, 1)
+        layout.addWidget(QtWidgets.QLabel("Filter: Recursive sum (0 = any)"), 7, 2)
+        layout.addWidget(self.term_sum_spin, 7, 3)
+        layout.addWidget(self.search_button, 8, 0, 1, 2)
+        layout.addWidget(self.clear_button, 8, 2, 1, 2)
+
+        layout.addWidget(self.results_table, 9, 0, 1, 4)
+
+        layout.addWidget(self.results_table, 9, 0, 1, 4)
+
+        self.create_menu()
+
+    def create_menu(self):
+        file_menu = self.menuBar().addMenu("&File")
+
+        open_action = QtWidgets.QAction("Open Dictionary...", self)
+        open_action.triggered.connect(self.open_dictionary)
+        file_menu.addAction(open_action)
+
+        file_menu.addSeparator()
+
+        exit_action = QtWidgets.QAction("Exit", self)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+    def open_dictionary(self):
+        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open Dictionary", str(Path.cwd()), "Text Files (*.txt);;All Files (*)")
+        if not file_name:
+            return
+
+        try:
+            with open(file_name, encoding="utf-8") as handle:
+                lines = [line.strip() for line in handle if line.strip()]
+        except Exception as exc:
+            QtWidgets.QMessageBox.critical(self, "Load Error", f"Could not open dictionary file:\n{exc}")
+            return
+
+        self.dictionary_names = lines
+        self.dictionary_path_label.setText(file_name)
+        self.search_dictionary()
+
+    def clear_filters(self):
+        self.starts_with_edit.clear()
+        self.name_sum_spin.setValue(0)
+        self.term_sum_spin.setValue(0)
+        self.search_dictionary()
+
+    def compute_initial(self, name):
+        configured_initial = self.initial_edit.text().strip().upper()
+        if configured_initial:
+            return configured_initial[0]
+
+        return self.default_initial
+
+    def compute_last_name(self, name):
+        parts = [part for part in name.split() if part]
+        return parts[-1] if len(parts) > 1 else parts[0] if parts else ""
+
+    def compute_full_name(self, name, initial):
+        if not name:
+            return ""
+        return f"{name} {initial}" if initial else name
+
+    def search_dictionary(self):
+        if not self.dictionary_names:
+            QtWidgets.QMessageBox.information(self, "No Dictionary", "Please open a dictionary file first.")
+            return
+
+        starts_with = self.starts_with_edit.text().strip().lower()
+        desired_sum = self.name_sum_spin.value()
+        desired_term = self.term_sum_spin.value()
+
+        filtered = []
+        for name in self.dictionary_names:
+            normalized = name.strip()
+            if not normalized:
+                continue
+            if starts_with and not normalized.lower().startswith(starts_with):
+                continue
+
+            total = self.model.find_sum(normalized)
+            if desired_sum and total != desired_sum:
+                continue
+
+            term_sum = self.model.find_term_sum(total)
+            if desired_term and term_sum != desired_term:
+                continue
+
+            initial = self.compute_initial(normalized)
+            full_name = self.compute_full_name(normalized, initial)
+            filtered.append((normalized, initial, self.compute_last_name(normalized), total, term_sum, full_name))
+
+        self.results_table.setRowCount(len(filtered))
+        for row, (name, initial, last_name, total, term_sum, full_name) in enumerate(filtered):
+            self.results_table.setItem(row, 0, QtWidgets.QTableWidgetItem(name))
+            self.results_table.setItem(row, 1, QtWidgets.QTableWidgetItem(initial))
+            self.results_table.setItem(row, 2, QtWidgets.QTableWidgetItem(last_name))
+            self.results_table.setItem(row, 3, QtWidgets.QTableWidgetItem(str(total)))
+            self.results_table.setItem(row, 4, QtWidgets.QTableWidgetItem(str(term_sum)))
+            self.results_table.setItem(row, 5, QtWidgets.QTableWidgetItem(full_name))
 
     def update_totals(self):
         name = self.name_edit.text().strip()
