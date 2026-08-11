@@ -277,7 +277,10 @@ class NumerologyWindow(QtWidgets.QMainWindow):
             if starts_with and not normalized.lower().startswith(starts_with):
                 continue
 
-            total = self.model.find_sum(normalized)
+            initial = self.compute_initial(normalized)
+            full_name = self.compute_full_name(normalized, initial)
+
+            total = self.model.find_sum(full_name)
             if desired_sum and total != desired_sum:
                 continue
 
@@ -285,8 +288,6 @@ class NumerologyWindow(QtWidgets.QMainWindow):
             if desired_term and term_sum != desired_term:
                 continue
 
-            initial = self.compute_initial(normalized)
-            full_name = self.compute_full_name(normalized, initial)
             filtered.append((normalized, initial, self.compute_last_name(normalized), total, term_sum, full_name))
 
         self.results_table.setRowCount(len(filtered))

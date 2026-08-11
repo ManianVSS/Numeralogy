@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numeralogy Dictionary Upload</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: #eef2f7;
+            color: #2f3a4a;
+        }
+
+        .container {
+            max-width: 1024px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+        }
+
+        .page-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 16px 40px rgba(35, 55, 80, 0.08);
+            padding: 2rem;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #1f2a38;
+            font-size: 2rem;
+        }
+
+        .form-row {
+            margin-bottom: 1rem;
+        }
+
+        .form-row label {
+            display: block;
+            margin-bottom: 0.45rem;
+            font-weight: 600;
+        }
+
+        input[type="text"], input[type="number"], input[type="file"], textarea {
+            width: 100%;
+            padding: 0.8rem 0.95rem;
+            border: 1px solid #d6dbe6;
+            border-radius: 10px;
+            background: #f8fafc;
+            box-sizing: border-box;
+            font-size: 0.98rem;
+            color: #1f2a38;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        button, .button-link {
+            border: none;
+            border-radius: 10px;
+            padding: 0.85rem 1.4rem;
+            font-size: 0.98rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+        }
+
+        button {
+            background: #3b82f6;
+            color: #ffffff;
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.18);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            opacity: 0.95;
+        }
+
+        .button-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #3b82f6;
+            background: #f0f7ff;
+            border: 1px solid #d6e4ff;
+        }
+
+        .error {
+            color: #c53030;
+            background: #fff1f1;
+            border: 1px solid #f8d7da;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .search-form,
+        .upload-form {
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+        }
+
+        .search-form .form-row {
+            display: inline-block;
+            vertical-align: top;
+            width: calc(33% - 1rem);
+            min-width: 220px;
+            margin-right: 1rem;
+        }
+
+        .search-form .form-row:last-child {
+            margin-right: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: #ffffff;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(35, 55, 80, 0.05);
+        }
+
+        th, td {
+            padding: 0.95rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: #f0f4ff;
+            color: #1f2a38;
+            font-weight: 700;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tbody tr:nth-child(odd) {
+            background: #fbfcff;
+        }
+
+        tbody tr:hover {
+            background: #f1f5ff;
+        }
+
+        td {
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .table-empty td {
+            text-align: center;
+            color: #64748b;
+        }
+
+        @media (max-width: 840px) {
+            .search-form .form-row,
+            .upload-form .form-row {
+                display: block;
+                width: 100%;
+                margin-right: 0;
+            }
+
+            .button-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Numeralogy Dictionary Upload</h1>
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+    <div class="page-card">
+        <form method="post" enctype="multipart/form-data" class="upload-form">
+            {% csrf_token %}
+            <h2>Upload Names</h2>
+            <div class="form-row">
+                <label for="file">Dictionary file (.txt, .csv, .docx):</label>
+                <input type="file" id="file" name="file" accept=".txt,.csv,.docx">
+            </div>
+            <div class="form-row">
+                <label for="name">Single name:</label>
+                <input type="text" id="name" name="name" placeholder="Enter a single name if not uploading a file">
+            </div>
+            <div class="form-row">
+                <label for="names">Multiple names (one per line):</label>
+                <textarea id="names" name="names" rows="4" placeholder="Enter multiple names, one per line"></textarea>
+            </div>
+            <div class="form-row">
+                <label for="initial">Initial (optional):</label>
+                <input type="text" id="initial" name="initial" maxlength="1" placeholder="Leave blank to default to first letter">
+            </div>
+            <div class="button-row">
+                <button type="submit">Upload</button>
+            </div>
+        </form>
+    </div>
+
+    <h2>Stored Names</h2>
+    <form method="get" class="search-form">
+        <div class="form-row">
+            <label for="name_prefix">Name prefix:</label>
+            <input type="text" id="name_prefix" name="name_prefix" value="{{ request.GET.name_prefix }}" placeholder="Search by name prefix">
+        </div>
+        <div class="form-row">
+            <label for="sum">Sum:</label>
+            <input type="number" id="sum" name="sum" value="{{ request.GET.sum }}" placeholder="Exact sum">
+        </div>
+        <div class="form-row">
+            <label for="recursive_sum">Recursive sum:</label>
+            <input type="number" id="recursive_sum" name="recursive_sum" value="{{ request.GET.recursive_sum }}" placeholder="Exact recursive sum">
+        </div>
+        <button type="submit">Filter</button>
+        <a href="{% url 'numerology:upload' %}">Clear</a>
+    </form>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Initial</th>
+            <th>Full Name</th>
+            <th>Sum</th>
+            <th>Recursive Sum</th>
+            <th>Source</th>
+            <th>Uploaded</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for entry in name_entries %}
+            <tr>
+                <td>{{ entry.name }}</td>
+                <td>{{ entry.initial }}</td>
+                <td>{{ entry.full_name }}</td>
+                <td>{{ entry.sum }}</td>
+                <td>{{ entry.recursive_sum }}</td>
+                <td>{{ entry.source_file }}</td>
+                <td>{{ entry.uploaded_at }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7">No names uploaded yet.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
