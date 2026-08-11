@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numerology</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f1f3f4;
+            color: #202124;
+        }
+        .app-shell {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .panel {
+            background: #ffffff;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .panel h1 {
+            margin: 0 0 16px;
+            font-size: 24px;
+            letter-spacing: -0.02em;
+        }
+        .grid {
+            display: grid;
+            gap: 14px;
+        }
+        .grid-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        label {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        input[type="text"], input[type="number"], input[type="file"], button, textarea {
+            font-size: 1rem;
+            padding: 10px 12px;
+            border: 1px solid #dfe1e5;
+            border-radius: 8px;
+            background: #fff;
+            color: #202124;
+            width: 100%;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 84px;
+        }
+        button {
+            cursor: pointer;
+            border: 1px solid transparent;
+            background: #1a73e8;
+            color: #fff;
+            transition: background 0.2s ease;
+        }
+        button:hover {
+            background: #1666cc;
+        }
+        button.secondary {
+            background: #e8eaed;
+            color: #202124;
+        }
+        .status-line {
+            font-size: 0.95rem;
+            color: #5f6368;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+        }
+        .results-table th,
+        .results-table td {
+            padding: 10px 12px;
+            border: 1px solid #dfe1e5;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+        .results-table th {
+            background: #f8f9fa;
+            font-weight: 700;
+        }
+        .export-section {
+            display: flex;
+            align-items: flex-end;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .full-row {
+            grid-column: 1 / -1;
+        }
+        @media (max-width: 900px) {
+            .grid-4, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <div class="panel">
+        <h1>Numerology</h1>
+        <div class="grid grid-4">
+            <div class="field-group full-row">
+                <label for="nameInput">Registration Name / Name Prefix For Export</label>
+                <input id="nameInput" type="text" value="Manian" placeholder="Enter a name or prefix" />
+            </div>
+            <div class="field-group">
+                <label for="totalWithoutInitial">Name Sum (without initial)</label>
+                <input id="totalWithoutInitial" type="text" readonly />
+            </div>
+            <div class="field-group">
+                <label for="totalWithInitial">Name Sum (with initial)</label>
+                <input id="totalWithInitial" type="text" readonly />
+            </div>
+            <div class="field-group">
+                <label for="termWithoutInitial">Recursive Sum (without initial)</label>
+                <input id="termWithoutInitial" type="text" readonly />
+            </div>
+            <div class="field-group">
+                <label for="termWithInitial">Recursive Sum (with initial)</label>
+                <input id="termWithInitial" type="text" readonly />
+            </div>
+            <div class="field-group">
+                <label for="initialInput">Initial (blank = first letter of name)</label>
+                <input id="initialInput" type="text" maxlength="1" placeholder="Leave blank to auto" />
+            </div>
+            <div class="field-group">
+                <label for="desiredInput">Desired Number</label>
+                <input id="desiredInput" type="number" min="1" value="20" />
+            </div>
+            <div class="field-group">
+                <label for="maxLengthInput">Max Length</label>
+                <input id="maxLengthInput" type="number" min="1" value="6" />
+            </div>
+            <div class="field-group full-row export-section">
+                <button id="exportButton">Export Names</button>
+                <div class="status-line" id="exportStatus">Generated names will download as a text file.</div>
+            </div>
+            <div class="field-group full-row">
+                <label for="generatedOutput">Generated names sample</label>
+                <textarea id="generatedOutput" readonly placeholder="Click Export Names to generate names"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Dictionary Search</h2>
+        <div class="grid grid-4">
+            <div class="field-group full-row">
+                <label for="dictionaryFile">Dictionary File</label>
+                <input id="dictionaryFile" type="file" accept=".txt" />
+                <div id="dictionaryStatus" class="status-line">No dictionary loaded.</div>
+            </div>
+            <div class="field-group">
+                <label for="startsWithInput">Filter: Starts with</label>
+                <input id="startsWithInput" type="text" placeholder="Prefix filter" />
+            </div>
+            <div class="field-group">
+                <label for="initialFilterInput">Filter: Initial</label>
+                <input id="initialFilterInput" type="text" maxlength="1" placeholder="Blank = auto" />
+            </div>
+            <div class="field-group">
+                <label for="filterSumInput">Filter: Name sum (0 = any)</label>
+                <input id="filterSumInput" type="number" min="0" value="0" />
+            </div>
+            <div class="field-group">
+                <label for="filterTermInput">Filter: Recursive sum (0 = any)</label>
+                <input id="filterTermInput" type="number" min="0" max="9" value="0" />
+            </div>
+            <div class="field-group full-row export-section">
+                <button id="searchButton">Search Dictionary</button>
+                <button id="clearFiltersButton" class="secondary">Clear Filters</button>
+            </div>
+            <div class="field-group full-row">
+                <table class="results-table" id="dictionaryTable">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Initial</th>
+                        <th>Last Name</th>
+                        <th>Sum (no initial)</th>
+                        <th>Recursive Sum (no initial)</th>
+                        <th>Sum</th>
+                        <th>Recursive Sum</th>
+                        <th>Full Name</th>
+                    </tr>
+                    </thead>
+                    <tbody id="dictionaryBody">
+                    <tr><td colspan="8" class="status-line">No dictionary entries to display.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const charMap = {
+        'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 8, 'g': 3,
+        'h': 5, 'i': 1, 'j': 1, 'k': 2, 'l': 3, 'm': 4, 'n': 5,
+        'o': 7, 'p': 8, 'q': 1, 'r': 2, 's': 3, 't': 4, 'u': 6,
+        'v': 6, 'w': 6, 'x': 5, 'y': 1, 'z': 7,
+    };
+    const vowels = 'aeiou';
+
+    const nameInput = document.getElementById('nameInput');
+    const initialInput = document.getElementById('initialInput');
+    const totalWithoutInitial = document.getElementById('totalWithoutInitial');
+    const totalWithInitial = document.getElementById('totalWithInitial');
+    const termWithoutInitial = document.getElementById('termWithoutInitial');
+    const termWithInitial = document.getElementById('termWithInitial');
+    const desiredInput = document.getElementById('desiredInput');
+    const maxLengthInput = document.getElementById('maxLengthInput');
+    const exportButton = document.getElementById('exportButton');
+    const generatedOutput = document.getElementById('generatedOutput');
+    const dictionaryFile = document.getElementById('dictionaryFile');
+    const dictionaryStatus = document.getElementById('dictionaryStatus');
+    const startsWithInput = document.getElementById('startsWithInput');
+    const initialFilterInput = document.getElementById('initialFilterInput');
+    const filterSumInput = document.getElementById('filterSumInput');
+    const filterTermInput = document.getElementById('filterTermInput');
+    const searchButton = document.getElementById('searchButton');
+    const clearFiltersButton = document.getElementById('clearFiltersButton');
+    const dictionaryBody = document.getElementById('dictionaryBody');
+
+    let dictionaryNames = [];
+
+    function isVowel(char) {
+        return vowels.includes(char.toLowerCase());
+    }
+
+    function normalizeText(text) {
+        return text.trim();
+    }
+
+    function findSum(text) {
+        let total = 0;
+        for (const char of text.toLowerCase()) {
+            total += charMap[char] || 0;
+        }
+        return total;
+    }
+
+    function digitSum(number) {
+        return String(number).split('').reduce((sum, digit) => sum + Number(digit), 0);
+    }
+
+    function findTermSum(total) {
+        while (total > 9) {
+            total = digitSum(total);
+        }
+        return total;
+    }
+
+    function computeInitial(name) {
+        const configured = initialInput.value.trim().toUpperCase();
+        if (configured) {
+            return configured[0];
+        }
+        return name.trim() ? name.trim()[0].toUpperCase() : '';
+    }
+
+    function computeFullName(name, initial) {
+        if (!name) return '';
+        return initial ? `${name} ${initial}` : name;
+    }
+
+    function updateTotals() {
+        const name = normalizeText(nameInput.value);
+        const initial = computeInitial(name);
+        const totalNoInitial = findSum(name);
+        const termNoInitial = findTermSum(totalNoInitial);
+        const fullName = computeFullName(name, initial);
+        const totalWithInitialValue = findSum(fullName);
+        const termWithInitialValue = findTermSum(totalWithInitialValue);
+
+        totalWithoutInitial.value = totalNoInitial;
+        termWithoutInitial.value = termNoInitial;
+        totalWithInitial.value = totalWithInitialValue;
+        termWithInitial.value = termWithInitialValue;
+    }
+
+    function exportNames() {
+        const prefix = normalizeText(nameInput.value);
+        const desiredSum = Number(desiredInput.value);
+        const maxLength = Number(maxLengthInput.value);
+
+        if (desiredSum <= 0 || maxLength <= 0) {
+            alert('Please enter a positive desired value and length.');
+            return;
+        }
+
+        const names = generateNames(prefix, maxLength, desiredSum);
+        const content = `Names for the combination Name Prefix: ${prefix}, Desired sum: ${desiredSum} and Maximum Length: ${maxLength} is as follows.\n${names.join('\n')}`;
+        generatedOutput.value = names.length ? names.join('\n') : 'No matching names';
+
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = 'names.txt';
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(url);
+    }
+
+    function generateNames(prefix, maxLength, desiredSum) {
+        const prefixSum = findSum(prefix);
+        if (desiredSum <= prefixSum) {
+            return [];
+        }
+        const names = [];
+        const remainingLength = maxLength - prefix.length;
+        exportNameTree(remainingLength, desiredSum - prefixSum, names, prefix);
+        return names;
+    }
+
+    function exportNameTree(maxLength, desiredSum, results, prefix) {
+        if (maxLength <= 0) {
+            return;
+        }
+
+        const parentLast = prefix ? prefix[prefix.length - 1].toLowerCase() : '';
+        for (const letter of 'abcdefghijklmnopqrstuvwxyz') {
+            if (prefix.toLowerCase().endsWith(letter)) {
+                continue;
+            }
+            if (isVowel(letter) && isVowel(parentLast)) {
+                continue;
+            }
+            const candidate = prefix + letter;
+            const value = charMap[letter] || 0;
+            if (value >= desiredSum) {
+                if (value === desiredSum) {
+                    results.push(candidate);
+                }
+                continue;
+            }
+            exportNameTree(maxLength - 1, desiredSum - value, results, candidate);
+        }
+    }
+
+    function getLastName(name) {
+        const parts = name.split(' ').filter(Boolean);
+        return parts.length > 1 ? parts[parts.length - 1] : (parts[0] || '');
+    }
+
+    function loadDictionary(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const text = reader.result;
+            dictionaryNames = text.split(/\r?\n/)
+                .map(line => normalizeText(line))
+                .filter(Boolean);
+            dictionaryStatus.textContent = `Loaded ${dictionaryNames.length} names from ${file.name}`;
+            renderDictionary();
+        };
+        reader.onerror = () => {
+            dictionaryStatus.textContent = 'Failed to load dictionary file.';
+        };
+        reader.readAsText(file, 'utf-8');
+    }
+
+    function renderDictionary() {
+        const startsWith = startsWithInput.value.trim().toLowerCase();
+        const initialFilter = initialFilterInput.value.trim().toUpperCase();
+        const sumFilter = Number(filterSumInput.value);
+        const termFilter = Number(filterTermInput.value);
+
+        const filtered = dictionaryNames
+            .map(name => {
+                const initial = initialFilter || computeInitial(name);
+                const fullName = computeFullName(name, initial);
+                const sumNoInitial = findSum(name);
+                const termNoInitial = findTermSum(sumNoInitial);
+                const sumWithInitial = findSum(fullName);
+                const termWithInitial = findTermSum(sumWithInitial);
+                return {
+                    name,
+                    initial,
+                    lastName: getLastName(name),
+                    sumNoInitial,
+                    termNoInitial,
+                    sumWithInitial,
+                    termWithInitial,
+                    fullName,
+                };
+            })
+            .filter(entry => {
+                if (startsWith && !entry.name.toLowerCase().startsWith(startsWith)) {
+                    return false;
+                }
+                if (sumFilter > 0 && entry.sumWithInitial !== sumFilter) {
+                    return false;
+                }
+                if (termFilter > 0 && entry.termWithInitial !== termFilter) {
+                    return false;
+                }
+                return true;
+            });
+
+        dictionaryBody.innerHTML = '';
+        if (!filtered.length) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 8;
+            cell.className = 'status-line';
+            cell.textContent = dictionaryNames.length ? 'No matching dictionary entries.' : 'No dictionary entries to display.';
+            row.appendChild(cell);
+            dictionaryBody.appendChild(row);
+            return;
+        }
+
+        for (const entry of filtered) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${entry.name}</td>
+                <td>${entry.initial}</td>
+                <td>${entry.lastName}</td>
+                <td>${entry.sumNoInitial}</td>
+                <td>${entry.termNoInitial}</td>
+                <td>${entry.sumWithInitial}</td>
+                <td>${entry.termWithInitial}</td>
+                <td>${entry.fullName}</td>
+            `;
+            dictionaryBody.appendChild(row);
+        }
+    }
+
+    function clearFilters() {
+        startsWithInput.value = '';
+        initialFilterInput.value = '';
+        filterSumInput.value = '0';
+        filterTermInput.value = '0';
+        renderDictionary();
+    }
+
+    nameInput.addEventListener('input', updateTotals);
+    initialInput.addEventListener('input', updateTotals);
+    exportButton.addEventListener('click', exportNames);
+    dictionaryFile.addEventListener('change', event => {
+        const file = event.target.files[0];
+        if (file) {
+            loadDictionary(file);
+        }
+    });
+    searchButton.addEventListener('click', renderDictionary);
+    clearFiltersButton.addEventListener('click', clearFilters);
+
+    updateTotals();
+</script>
+</body>
+</html>
