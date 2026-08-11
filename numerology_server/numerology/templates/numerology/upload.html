@@ -236,6 +236,8 @@
             <th>Name</th>
             <th>Initial</th>
             <th>Full Name</th>
+            <th>Sum (no initial)</th>
+            <th>Recursive Sum (no initial)</th>
             <th>Sum</th>
             <th>Recursive Sum</th>
             <th>Source</th>
@@ -248,13 +250,15 @@
                 <td>{{ entry.name }}</td>
                 <td>{{ entry.initial }}</td>
                 <td>{{ entry.full_name }}</td>
+                <td>{{ entry.sum_without_initial }}</td>
+                <td>{{ entry.recursive_sum_without_initial }}</td>
                 <td>{{ entry.sum }}</td>
                 <td>{{ entry.recursive_sum }}</td>
                 <td>{{ entry.source_file }}</td>
                 <td>{{ entry.uploaded_at }}</td>
             </tr>
         {% empty %}
-            <tr><td colspan="7">No names uploaded yet.</td></tr>
+            <tr><td colspan="9">No names uploaded yet.</td></tr>
         {% endfor %}
         </tbody>
     </table>

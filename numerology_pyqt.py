@@ -133,10 +133,14 @@ class NumerologyWindow(QtWidgets.QMainWindow):
         self.resize(960, 520)
 
         self.name_edit = QtWidgets.QLineEdit("Manian")
-        self.total_edit = QtWidgets.QLineEdit()
-        self.total_edit.setReadOnly(True)
-        self.term_total_edit = QtWidgets.QLineEdit()
-        self.term_total_edit.setReadOnly(True)
+        self.total_without_initial_edit = QtWidgets.QLineEdit()
+        self.total_without_initial_edit.setReadOnly(True)
+        self.total_with_initial_edit = QtWidgets.QLineEdit()
+        self.total_with_initial_edit.setReadOnly(True)
+        self.term_without_initial_edit = QtWidgets.QLineEdit()
+        self.term_without_initial_edit.setReadOnly(True)
+        self.term_with_initial_edit = QtWidgets.QLineEdit()
+        self.term_with_initial_edit.setReadOnly(True)
         self.desired_spin = QtWidgets.QSpinBox()
         self.desired_spin.setRange(1, 1000)
         self.desired_spin.setValue(20)
@@ -159,8 +163,17 @@ class NumerologyWindow(QtWidgets.QMainWindow):
         self.clear_button.clicked.connect(self.clear_filters)
         self.dictionary_path_label = QtWidgets.QLabel("No dictionary loaded")
 
-        self.results_table = QtWidgets.QTableWidget(0, 6)
-        self.results_table.setHorizontalHeaderLabels(["Name", "Initial", "Last Name", "Sum", "Recursive Sum", "Full Name"])
+        self.results_table = QtWidgets.QTableWidget(0, 8)
+        self.results_table.setHorizontalHeaderLabels([
+            "Name",
+            "Initial",
+            "Last Name",
+            "Sum (no initial)",
+            "Recursive Sum (no initial)",
+            "Sum",
+            "Recursive Sum",
+            "Full Name",
+        ])
         self.results_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.results_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.results_table.horizontalHeader().setStretchLastSection(True)
@@ -180,10 +193,14 @@ class NumerologyWindow(QtWidgets.QMainWindow):
         layout.addWidget(QtWidgets.QLabel("Dictionary File:"), 1, 0)
         layout.addWidget(self.dictionary_path_label, 1, 1, 1, 3)
 
-        layout.addWidget(QtWidgets.QLabel("Name Sum:"), 2, 2)
-        layout.addWidget(self.total_edit, 2, 3)
-        layout.addWidget(QtWidgets.QLabel("Name Recursive Sum:"), 3, 2)
-        layout.addWidget(self.term_total_edit, 3, 3)
+        layout.addWidget(QtWidgets.QLabel("Name Sum (without initial):"), 2, 0)
+        layout.addWidget(self.total_without_initial_edit, 2, 1)
+        layout.addWidget(QtWidgets.QLabel("Name Sum (with initial):"), 2, 2)
+        layout.addWidget(self.total_with_initial_edit, 2, 3)
+        layout.addWidget(QtWidgets.QLabel("Recursive Sum (without initial):"), 3, 0)
+        layout.addWidget(self.term_without_initial_edit, 3, 1)
+        layout.addWidget(QtWidgets.QLabel("Recursive Sum (with initial):"), 3, 2)
+        layout.addWidget(self.term_with_initial_edit, 3, 3)
 
         layout.addWidget(QtWidgets.QLabel("Desired Number:"), 4, 0)
         layout.addWidget(self.desired_spin, 4, 1)
@@ -280,30 +297,53 @@ class NumerologyWindow(QtWidgets.QMainWindow):
             initial = self.compute_initial(normalized)
             full_name = self.compute_full_name(normalized, initial)
 
-            total = self.model.find_sum(full_name)
-            if desired_sum and total != desired_sum:
+            total_without_initial = self.model.find_sum(normalized)
+            term_without_initial = self.model.find_term_sum(total_without_initial)
+            total_with_initial = self.model.find_sum(full_name)
+            term_with_initial = self.model.find_term_sum(total_with_initial)
+
+            if desired_sum and total_with_initial != desired_sum:
                 continue
 
-            term_sum = self.model.find_term_sum(total)
-            if desired_term and term_sum != desired_term:
+            if desired_term and term_with_initial != desired_term:
                 continue
 
-            filtered.append((normalized, initial, self.compute_last_name(normalized), total, term_sum, full_name))
+            filtered.append((
+                normalized,
+                initial,
+                self.compute_last_name(normalized),
+                total_without_initial,
+                term_without_initial,
+                total_with_initial,
+                term_with_initial,
+                full_name,
+            ))
 
         self.results_table.setRowCount(len(filtered))
-        for row, (name, initial, last_name, total, term_sum, full_name) in enumerate(filtered):
+        for row, (name, initial, last_name, total_without_initial, term_without_initial, total_with_initial, term_with_initial, full_name) in enumerate(filtered):
             self.results_table.setItem(row, 0, QtWidgets.QTableWidgetItem(name))
             self.results_table.setItem(row, 1, QtWidgets.QTableWidgetItem(initial))
             self.results_table.setItem(row, 2, QtWidgets.QTableWidgetItem(last_name))
-            self.results_table.setItem(row, 3, QtWidgets.QTableWidgetItem(str(total)))
-            self.results_table.setItem(row, 4, QtWidgets.QTableWidgetItem(str(term_sum)))
-            self.results_table.setItem(row, 5, QtWidgets.QTableWidgetItem(full_name))
+            self.results_table.setItem(row, 3, QtWidgets.QTableWidgetItem(str(total_without_initial)))
+            self.results_table.setItem(row, 4, QtWidgets.QTableWidgetItem(str(term_without_initial)))
+            self.results_table.setItem(row, 5, QtWidgets.QTableWidgetItem(str(total_with_initial)))
+            self.results_table.setItem(row, 6, QtWidgets.QTableWidgetItem(str(term_with_initial)))
+            self.results_table.setItem(row, 7, QtWidgets.QTableWidgetItem(full_name))
 
     def update_totals(self):
         name = self.name_edit.text().strip()
-        total = self.model.find_sum(name)
-        self.total_edit.setText(str(total))
-        self.term_total_edit.setText(str(self.model.find_term_sum(total)))
+        initial = self.compute_initial(name)
+        total_without_initial = self.model.find_sum(name)
+        term_without_initial = self.model.find_term_sum(total_without_initial)
+
+        full_name = self.compute_full_name(name, initial)
+        total_with_initial = self.model.find_sum(full_name)
+        term_with_initial = self.model.find_term_sum(total_with_initial)
+
+        self.total_without_initial_edit.setText(str(total_without_initial))
+        self.term_without_initial_edit.setText(str(term_without_initial))
+        self.total_with_initial_edit.setText(str(total_with_initial))
+        self.term_with_initial_edit.setText(str(term_with_initial))
 
     def export_names(self):
         desired_sum = self.desired_spin.value()

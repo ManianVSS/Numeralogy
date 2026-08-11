@@ -13,8 +13,10 @@ class NumerologyTests(TestCase):
     def test_name_entry_creation(self):
         entry = NameEntry.objects.create(name='Alice', initial='A')
         self.assertEqual(entry.full_name, 'Alice A')
-        self.assertEqual(entry.sum, 1 + 3 + 9 + 3 + 5 + 1)
-        self.assertEqual(entry.recursive_sum, 3)
+        self.assertEqual(entry.sum_without_initial, 1 + 3 + 1 + 3 + 5)
+        self.assertEqual(entry.recursive_sum_without_initial, 4)
+        self.assertEqual(entry.sum, 1 + 3 + 1 + 3 + 5 + 1)
+        self.assertEqual(entry.recursive_sum, 5)
 
     def test_upload_api_accepts_text_file(self):
         url = reverse('numerology:upload-api')
