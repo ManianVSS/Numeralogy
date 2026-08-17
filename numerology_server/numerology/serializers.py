@@ -4,11 +4,8 @@ from .models import NameEntry
 
 
 class NameEntrySerializer(serializers.ModelSerializer):
-    sum_without_initial = serializers.IntegerField(read_only=True)
-    recursive_sum_without_initial = serializers.IntegerField(read_only=True)
     sum = serializers.IntegerField(read_only=True)
     recursive_sum = serializers.IntegerField(read_only=True)
-    full_name = serializers.CharField(read_only=True)
     uploaded_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
@@ -16,10 +13,6 @@ class NameEntrySerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'initial',
-            'full_name',
-            'sum_without_initial',
-            'recursive_sum_without_initial',
             'sum',
             'recursive_sum',
             'source_file',
@@ -31,7 +24,6 @@ class UploadSerializer(serializers.Serializer):
     file = serializers.FileField(required=False)
     name = serializers.CharField(required=False, allow_blank=True)
     names = serializers.CharField(required=False, allow_blank=True)
-    initial = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, data):
         if not data.get('file') and not data.get('name') and not data.get('names'):

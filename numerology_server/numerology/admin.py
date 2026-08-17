@@ -11,10 +11,6 @@ class NameEntryResource(resources.ModelResource):
         fields = (
             'id',
             'name',
-            'initial',
-            'full_name',
-            'sum_without_initial',
-            'recursive_sum_without_initial',
             'sum',
             'recursive_sum',
             'source_file',
@@ -27,22 +23,15 @@ class NameEntryAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     resource_class = NameEntryResource
     list_display = (
         'name',
-        'initial',
-        'full_name',
-        'sum_without_initial',
-        'recursive_sum_without_initial',
         'sum',
         'recursive_sum',
         'source_file',
         'uploaded_at',
     )
-    search_fields = ('name', 'initial', 'full_name', 'source_file')
+    search_fields = ('name', 'source_file')
     list_filter = ('uploaded_at', 'source_file')
     readonly_fields = (
-        'sum_without_initial',
-        'recursive_sum_without_initial',
         'sum',
         'recursive_sum',
-        'full_name',
         'uploaded_at',
     )

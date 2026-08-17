@@ -199,17 +199,30 @@
                 <input type="text" id="name" name="name" placeholder="Enter a single name if not uploading a file">
             </div>
             <div class="form-row">
+                <label for="last_name">Last name (preview only):</label>
+                <input type="text" id="last_name" name="last_name" placeholder="Optional last name for full-name preview only">
+            </div>
+            <div class="form-row">
                 <label for="names">Multiple names (one per line):</label>
                 <textarea id="names" name="names" rows="4" placeholder="Enter multiple names, one per line"></textarea>
             </div>
-            <div class="form-row">
-                <label for="initial">Initial (optional):</label>
-                <input type="text" id="initial" name="initial" maxlength="1" placeholder="Leave blank to default to first letter">
+            <div class="preview-box" style="margin: 1rem 0 1.5rem; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <strong>Full name:</strong> <span id="full_name_value">-</span><br>
+                <strong>Sum:</strong> <span id="full_name_sum">-</span><br>
+                <strong>Recursive sum:</strong> <span id="full_name_recursive_sum">-</span>
             </div>
             <div class="button-row">
                 <button type="submit">Upload</button>
             </div>
         </form>
+    </div>
+
+    <div class="page-card" style="margin-top: 1.5rem;">
+        <h2>Full-name options</h2>
+        <div class="form-row" style="max-width: 420px; margin-bottom: 0;">
+            <label for="table_last_name">Last name:</label>
+            <input type="text" id="table_last_name" name="table_last_name" placeholder="Type a last name to calculate full-name totals dynamically">
+        </div>
     </div>
 
     <h2>Stored Names</h2>
@@ -230,38 +243,207 @@
         <a href="{% url 'numerology:upload' %}">Clear</a>
     </form>
 
-    <table>
+    <div style="margin-top: 1.5rem; margin-bottom: 1rem; display: flex; gap: 0.75rem;">
+        <button type="button" id="export-csv-btn" style="background: #10b981;">Export to CSV</button>
+    </div>
+
+    <table id="names-table">
         <thead>
         <tr>
-            <th>Name</th>
-            <th>Initial</th>
-            <th>Full Name</th>
-            <th>Sum (no initial)</th>
-            <th>Recursive Sum (no initial)</th>
-            <th>Sum</th>
-            <th>Recursive Sum</th>
-            <th>Source</th>
-            <th>Uploaded</th>
+            <th data-sort-key="name">Name</th>
+            <th data-sort-key="sum">Sum (Name)</th>
+            <th data-sort-key="recursive-sum">Recursive Sum (Name)</th>
+            <th data-sort-key="full-name">Full Name</th>
+            <th data-sort-key="full-sum">Sum (Full Name)</th>
+            <th data-sort-key="full-recursive-sum">Recursive Sum (Full Name)</th>
+            <th data-sort-key="source-file">Source</th>
+            <th data-sort-key="uploaded-at">Uploaded</th>
         </tr>
         </thead>
         <tbody>
         {% for entry in name_entries %}
-            <tr>
+            <tr data-row data-name="{{ entry.name|escapejs }}" data-sum="{{ entry.sum }}" data-recursive-sum="{{ entry.recursive_sum }}" data-source-file="{{ entry.source_file|escapejs }}" data-uploaded-at="{{ entry.uploaded_at|date:'c' }}" data-full-name="{{ entry.name|escapejs }}" data-full-sum="{{ entry.sum }}" data-full-recursive-sum="{{ entry.recursive_sum }}">
                 <td>{{ entry.name }}</td>
-                <td>{{ entry.initial }}</td>
-                <td>{{ entry.full_name }}</td>
-                <td>{{ entry.sum_without_initial }}</td>
-                <td>{{ entry.recursive_sum_without_initial }}</td>
-                <td>{{ entry.sum }}</td>
-                <td>{{ entry.recursive_sum }}</td>
+                <td class="sum-cell">{{ entry.sum }}</td>
+                <td class="recursive-sum-cell">{{ entry.recursive_sum }}</td>
+                <td class="full-name-cell">{{ entry.name }}</td>
+                <td class="full-sum-cell">{{ entry.sum }}</td>
+                <td class="full-recursive-sum-cell">{{ entry.recursive_sum }}</td>
                 <td>{{ entry.source_file }}</td>
                 <td>{{ entry.uploaded_at }}</td>
             </tr>
         {% empty %}
-            <tr><td colspan="9">No names uploaded yet.</td></tr>
+            <tr><td colspan="8">No names uploaded yet.</td></tr>
         {% endfor %}
         </tbody>
     </table>
 </div>
+<script>
+    const letterValues = {
+        a: 1, b: 2, c: 3, d: 4, e: 5, f: 8, g: 3, h: 5, i: 1, j: 1, k: 2, l: 3, m: 4, n: 5, o: 7, p: 8, q: 1, r: 2, s: 3, t: 4, u: 6, v: 6, w: 6, x: 5, y: 1, z: 7
+    };
+
+    function calculateSum(text) {
+        return [...text.toLowerCase()].reduce((total, char) => total + (letterValues[char] || 0), 0);
+    }
+
+    function calculateRecursiveSum(total) {
+        while (total > 9) {
+            total = [...String(total)].reduce((sum, digit) => sum + Number(digit), 0);
+        }
+        return total;
+    }
+
+    function getRowFullName(name, lastName) {
+        return [name, lastName].filter(Boolean).join(' ');
+    }
+
+    function updateDynamicTableValues() {
+        const lastName = document.getElementById('table_last_name').value.trim();
+        document.querySelectorAll('#names-table tbody tr[data-row]').forEach((row) => {
+            const name = row.dataset.name || '';
+            const fullName = getRowFullName(name, lastName);
+            const fullSum = calculateSum(fullName);
+            const fullRecursiveSum = calculateRecursiveSum(fullSum);
+
+            row.dataset.fullName = fullName;
+            row.dataset.fullSum = String(fullSum);
+            row.dataset.fullRecursiveSum = String(fullRecursiveSum);
+
+            row.cells[3].textContent = fullName;
+            row.cells[4].textContent = fullSum;
+            row.cells[5].textContent = fullRecursiveSum;
+        });
+    }
+
+    let activeSortKey = 'name';
+    let activeSortDirection = 'asc';
+
+    function updateSortIndicators() {
+        document.querySelectorAll('#names-table thead th[data-sort-key]').forEach((header) => {
+            const key = header.dataset.sortKey;
+            const currentLabel = header.dataset.label || header.textContent.trim();
+            const isActive = key === activeSortKey;
+            const indicator = isActive ? (activeSortDirection === 'asc' ? ' ▲' : ' ▼') : '';
+
+            header.dataset.label = currentLabel;
+            header.textContent = currentLabel + indicator;
+        });
+    }
+
+    function sortTableRows() {
+        const tableBody = document.querySelector('#names-table tbody');
+        const rows = Array.from(tableBody.querySelectorAll('tr[data-row]'));
+
+        const keyMap = {
+            name: (row) => row.dataset.name || '',
+            sum: (row) => Number(row.dataset.sum || 0),
+            'recursive-sum': (row) => Number(row.dataset.recursiveSum || 0),
+            'full-name': (row) => row.dataset.fullName || '',
+            'full-sum': (row) => Number(row.dataset.fullSum || 0),
+            'full-recursive-sum': (row) => Number(row.dataset.fullRecursiveSum || 0),
+            'source-file': (row) => row.dataset.sourceFile || '',
+            'uploaded-at': (row) => new Date(row.dataset.uploadedAt || 0).getTime(),
+        };
+
+        rows.sort((leftRow, rightRow) => {
+            const leftValue = keyMap[activeSortKey](leftRow);
+            const rightValue = keyMap[activeSortKey](rightRow);
+
+            if (typeof leftValue === 'string' && typeof rightValue === 'string') {
+                const comparison = leftValue.localeCompare(rightValue, undefined, { sensitivity: 'base' });
+                return activeSortDirection === 'asc' ? comparison : -comparison;
+            }
+
+            const comparison = Number(leftValue) - Number(rightValue);
+            return activeSortDirection === 'asc' ? comparison : -comparison;
+        });
+
+        rows.forEach((row) => tableBody.appendChild(row));
+        updateSortIndicators();
+    }
+
+    document.querySelectorAll('#names-table thead th[data-sort-key]').forEach((header) => {
+        header.style.cursor = 'pointer';
+        header.dataset.label = header.textContent.trim();
+        header.addEventListener('click', () => {
+            const key = header.dataset.sortKey;
+            if (activeSortKey === key) {
+                activeSortDirection = activeSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                activeSortKey = key;
+                activeSortDirection = 'asc';
+            }
+
+            sortTableRows();
+        });
+    });
+
+    function saveLastNameToStorage() {
+        const lastName = document.getElementById('table_last_name').value.trim();
+        localStorage.setItem('numerology_last_name', lastName);
+    }
+
+    function restoreLastNameFromStorage() {
+        const savedLastName = localStorage.getItem('numerology_last_name') || '';
+        document.getElementById('table_last_name').value = savedLastName;
+        updateDynamicTableValues();
+    }
+
+    document.getElementById('table_last_name').addEventListener('input', () => {
+        updateDynamicTableValues();
+        saveLastNameToStorage();
+    });
+    
+    restoreLastNameFromStorage();
+    updateSortIndicators();
+
+    function exportTableToCSV() {
+        const table = document.getElementById('names-table');
+        const headers = [];
+        const rows = [];
+
+        // Collect headers
+        document.querySelectorAll('#names-table thead th[data-sort-key]').forEach((header) => {
+            const label = header.dataset.label || header.textContent.trim();
+            headers.push(escapeCSV(label));
+        });
+
+        // Collect visible rows in current sort order
+        document.querySelectorAll('#names-table tbody tr[data-row]').forEach((row) => {
+            const rowData = [];
+            row.querySelectorAll('td').forEach((cell) => {
+                rowData.push(escapeCSV(cell.textContent.trim()));
+            });
+            rows.push(rowData);
+        });
+
+        // Build CSV content
+        const csvContent = [
+            headers.join(','),
+            ...rows.map((row) => row.join(','))
+        ].join('\n');
+
+        // Trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `numerology_names_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function escapeCSV(value) {
+        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+            return '"' + value.replace(/"/g, '""') + '"';
+        }
+        return value;
+    }
+
+    document.getElementById('export-csv-btn').addEventListener('click', exportTableToCSV);
+</script>
 </body>
 </html>

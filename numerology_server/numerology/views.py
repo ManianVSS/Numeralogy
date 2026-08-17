@@ -66,13 +66,13 @@ def build_existing_name_keys():
     return {name.casefold() for name in NameEntry.objects.values_list('name', flat=True)}
 
 
-def create_name_entry_if_new(name, initial, source_file, existing_name_keys):
+def create_name_entry_if_new(name, source_file, existing_name_keys):
     if not name:
         return False
     normalized_key = name.casefold()
     if normalized_key in existing_name_keys:
         return False
-    NameEntry.objects.create(name=name, initial=initial, source_file=source_file)
+    NameEntry.objects.create(name=name, source_file=source_file)
     existing_name_keys.add(normalized_key)
     return True
 
@@ -111,7 +111,6 @@ class UploadDictionaryView(APIView):
         uploaded_file = serializer.validated_data.get('file')
         name_value = serializer.validated_data.get('name', '').strip()
         names_text = serializer.validated_data.get('names', '').strip()
-        initial = serializer.validated_data.get('initial', '').strip().upper()
 
         imported = 0
         existing_name_keys = build_existing_name_keys()
@@ -125,17 +124,17 @@ class UploadDictionaryView(APIView):
                     handle.write(chunk)
             names = parse_uploaded_file(file_path)
             for name in names:
-                if create_name_entry_if_new(name, initial, uploaded_file.name, existing_name_keys):
+                if create_name_entry_if_new(name, uploaded_file.name, existing_name_keys):
                     imported += 1
 
         if names_text:
             for name in parse_names_text(names_text):
-                if create_name_entry_if_new(name, initial, 'manual-names', existing_name_keys):
+                if create_name_entry_if_new(name, 'manual-names', existing_name_keys):
                     imported += 1
 
         if name_value:
             normalized_name = normalize_name(name_value)
-            if create_name_entry_if_new(normalized_name, initial, 'manual', existing_name_keys):
+            if create_name_entry_if_new(normalized_name, 'manual', existing_name_keys):
                 imported += 1
 
         return Response({'imported': imported}, status=status.HTTP_201_CREATED)
@@ -163,7 +162,6 @@ class UploadFormView(View):
         uploaded_file = request.FILES.get('file')
         single_name = request.POST.get('name', '').strip()
         names_text = request.POST.get('names', '').strip()
-        initial = request.POST.get('initial', '').strip().upper()
         source_name = uploaded_file.name if uploaded_file else 'manual'
 
         if not uploaded_file and not single_name and not names_text:
@@ -183,15 +181,15 @@ class UploadFormView(View):
                     handle.write(chunk)
             names = parse_uploaded_file(file_path)
             for name in names:
-                create_name_entry_if_new(name, initial, source_name, existing_name_keys)
+                create_name_entry_if_new(name, source_name, existing_name_keys)
 
         if names_text:
             for name in parse_names_text(names_text):
-                create_name_entry_if_new(name, initial, 'manual-names', existing_name_keys)
+                create_name_entry_if_new(name, 'manual-names', existing_name_keys)
 
         if single_name:
             normalized_name = normalize_name(single_name)
             if normalized_name:
-                create_name_entry_if_new(normalized_name, initial, 'manual', existing_name_keys)
+                create_name_entry_if_new(normalized_name, 'manual', existing_name_keys)
 
         return HttpResponseRedirect(reverse('numerology:upload'))

@@ -1,33 +1,55 @@
 from django.db import models
 
 
+from django.utils.translation import gettext_lazy as _
+
+
+class Rashi(models.TextChoices):
+    """
+    Rashi choices for the NameEntry model.
+    Different Rashi values are Dhanur, Kanya, Karka, Kumbha, Makara, Meena, Mesha, Mithuna, Simha, Tula, Vrishabha, Vrishchika, and NONE.
+    """
+    NONE = 'NONE', _('None')
+    DHANUR = 'Dhanur', _('Dhanur')
+    KANYA = 'Kanya', _('Kanya')
+    KARKA = 'Karka', _('Karka')
+    KUMBHA = 'Kumbha', _('Kumbha')
+    MAKARA = 'Makara', _('Makara')
+    MEENA = 'Meena', _('Meena')
+    MESH = 'Mesha', _('Mesha')
+    MITHUNA = 'Mithuna', _('Mithuna')
+    SIMHA = 'Simha', _('Simha')
+    TULA = 'Tula', _('Tula')
+    VRISHABHA = 'Vrishabha', _('Vrishabha')
+    VRISHCHIKA = 'Vrishchika', _('Vrishchika')
+
+    @classmethod
+    def get_name_prefix_map(cls):
+        """Name prefix for different rashis."""
+        return {
+            cls.NONE: [],
+            cls.KUMBHA: ['Go', 'Sa', 'Si', 'Su'],
+        }
+
+
 class NameEntry(models.Model):
+    class Meta:
+        verbose_name = 'Name Entry'
+        verbose_name_plural = 'Name Entries'
+        ordering = ['-uploaded_at', 'name']
+
     name = models.CharField(max_length=255)
-    initial = models.CharField(max_length=10, blank=True)
-    full_name = models.CharField(max_length=270, blank=True)
-    sum_without_initial = models.IntegerField(default=0)
-    recursive_sum_without_initial = models.IntegerField(default=0)
+    gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')], blank=True)
     sum = models.IntegerField(default=0)
     recursive_sum = models.IntegerField(default=0)
     source_file = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        ordering = ['-uploaded_at', 'name']
-
     def save(self, *args, **kwargs):
-        if self.name and not self.initial:
-            self.initial = self.name[:1].upper()
         if self.name:
-            self.sum_without_initial = self.calculate_sum(self.name)
-            self.recursive_sum_without_initial = self.calculate_recursive_sum(self.sum_without_initial)
-            self.full_name = f"{self.name} {self.initial}" if self.initial else self.name
-            self.sum = self.calculate_sum(self.full_name)
+            self.sum = self.calculate_sum(self.name)
             self.recursive_sum = self.calculate_recursive_sum(self.sum)
         else:
-            self.sum_without_initial = 0
-            self.recursive_sum_without_initial = 0
-            self.full_name = ''
             self.sum = 0
             self.recursive_sum = 0
         super().save(*args, **kwargs)
@@ -52,4 +74,4 @@ class NameEntry(models.Model):
         return total
 
     def __str__(self):
-        return self.full_name
+        return self.name
