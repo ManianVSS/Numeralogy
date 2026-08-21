@@ -1,4 +1,5 @@
-import getpass
+#!/usr/bin/env python3
+import os
 import sys
 from pathlib import Path
 
@@ -126,8 +127,11 @@ class NumerologyWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.model = NumerologyModel()
-        self.dictionary_names = []
-        self.default_initial = getpass.getuser()[:1].upper() if getpass.getuser() else ""
+        self.dictionary_names = []        
+
+        # Get user name from os
+        self.user_name=os.getlogin() if hasattr(os, 'getlogin') else 'Manian'
+        self.default_initial = self.user_name[:1].upper()
 
         self.setWindowTitle("Numeralogy")
         self.resize(960, 520)

@@ -212,7 +212,8 @@
         <h2>Full-name options</h2>
         <div class="form-row" style="max-width: 420px; margin-bottom: 0;">
             <label for="table_last_name">Last name:</label>
-            <input type="text" id="table_last_name" name="table_last_name" placeholder="Type a last name to calculate full-name totals dynamically">
+            <!--placeholder="Enter lastname e.g. {{username}}"-->
+            <input type="text" id="table_last_name" name="table_last_name" value="{{lastname}}">
         </div>
     </div>
 
@@ -389,7 +390,7 @@
         const lastNameInput = document.getElementById('table_last_name');
         if (!lastNameInput || typeof lastNameInput.value === 'undefined') return;
         
-        const savedLastName = localStorage.getItem('numerology_last_name') || '';
+        const savedLastName = localStorage.getItem('numerology_last_name') || lastNameInput.value || '';
         lastNameInput.value = savedLastName;
         updateDynamicTableValues();
     }
